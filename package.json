@@ -1,0 +1,13 @@
+{
+  "name": "fullstack-guestbook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "前后端数据库分离的留言板示例（React + Express + SQLite/PostgreSQL）",
+  "scripts": {
+    "setup": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix backend run start"
+  }
+}

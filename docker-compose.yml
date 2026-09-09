@@ -1,0 +1,40 @@
+services:
+  # 独立数据库服务
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: guestbook
+      POSTGRES_PASSWORD: guestbook
+      POSTGRES_DB: guestbook
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guestbook"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # 独立后端服务
+  backend:
+    build: ./backend
+    environment:
+      PORT: 3001
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://guestbook:guestbook@db:5432/guestbook
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # 独立前端服务
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
