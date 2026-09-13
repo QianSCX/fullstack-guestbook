@@ -49,6 +49,46 @@ npm start              # 后端监听 0.0.0.0:3001，并托管前端静态文件
 2. 在服务器/路由器上**放行 3001 端口**（防火墙入站规则 + 端口转发）。
 3. 如果本机没有公网 IP（家用宽带），可用内网穿透工具（如 Cloudflare Tunnel、frp、ngrok）。
 
+## 公网访问实战（ngrok 内网穿透）
+
+家用宽带通常是运营商级 NAT，没有真实公网 IP，无法直接端口映射。最快的方式是用 ngrok 把本地 `3001` 端口映射成一个公网 HTTPS 地址。
+
+### 步骤
+
+1. 构建前端并启动后端（单进程同时托管前端 + API）：
+
+   ```bash
+   npm run setup
+   npm run build          # 构建前端到 frontend/dist
+   npm start              # 后端监听 0.0.0.0:3001，并托管 frontend/dist
+   ```
+
+2. 配置 ngrok authtoken（仅首次，令牌在 ngrok 控制台获取）：
+
+   ```bash
+   ngrok config add-authtoken <你的token>
+   ```
+
+3. 启动隧道：
+
+   ```bash
+   ngrok http 3001
+   ```
+
+   控制台会输出 `https://xxx.ngrok-free.dev` 公网地址，浏览器打开即可访问。
+
+4. 验证服务：
+
+   ```bash
+   curl https://xxx.ngrok-free.dev/api/health   # → {"status":"ok",...}
+   ```
+
+### 注意事项
+
+- 浏览器首次访问 ngrok 免费域名会弹「You are about to visit…」确认页，点 **Visit Site** 进入即可。
+- 免费版域名**每次重启 ngrok 都会变化**；要固定域名可用 ngrok 付费版保留域名，或改用 Cloudflare Tunnel。
+- 目前留言板**任何人可删除任意留言**（无鉴权）；长期对外使用建议加一层管理密码。
+
 ## Docker 部署（真·三层分离：三个独立容器）
 
 需要安装 Docker，然后：
