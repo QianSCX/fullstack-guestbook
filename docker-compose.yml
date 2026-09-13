@@ -22,6 +22,7 @@ services:
       PORT: 3001
       HOST: 0.0.0.0
       DATABASE_URL: postgres://guestbook:guestbook@db:5432/guestbook
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
     depends_on:
       db:
         condition: service_healthy
@@ -33,7 +34,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      - "${WEB_PORT:-80}:80"
     restart: unless-stopped
 
 volumes:

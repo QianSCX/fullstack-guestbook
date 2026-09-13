@@ -87,7 +87,7 @@ npm start              # 后端监听 0.0.0.0:3001，并托管前端静态文件
 
 - 浏览器首次访问 ngrok 免费域名会弹「You are about to visit…」确认页，点 **Visit Site** 进入即可。
 - 免费版域名**每次重启 ngrok 都会变化**；要固定域名可用 ngrok 付费版保留域名，或改用 Cloudflare Tunnel。
-- 目前留言板**任何人可删除任意留言**（无鉴权）；长期对外使用建议加一层管理密码。
+- 删除与修改留言需要**管理员权限**：先用 `POST /api/admin/login` 登录获取令牌，再带上 `Authorization: Bearer <token>` 请求头调用受保护接口。
 
 ## Docker 部署（真·三层分离：三个独立容器）
 
@@ -105,6 +105,13 @@ docker compose up -d --build
 
 访问 `http://<你的公网IP>`（80 端口）即可。
 
+## 管理员鉴权
+
+默认管理员密码为 `admin123`，通过环境变量 `ADMIN_PASSWORD` 覆盖（生产环境务必修改）。普通用户可以发布留言，但只有管理员才能**删除**或**修改**留言。
+
+- 前端：页面顶部输入管理员密码登录后，才会出现「编辑」「删除」按钮。
+- 后端：`PUT/DELETE /api/messages/:id` 需要 `Authorization: Bearer <token>` 请求头，令牌由登录接口签发。
+
 ## API 文档
 
 | 方法 | 路径 | 说明 |
@@ -112,7 +119,11 @@ docker compose up -d --build
 | `GET` | `/api/health` | 健康检查 |
 | `GET` | `/api/messages` | 获取所有留言（按时间倒序） |
 | `POST` | `/api/messages` | 发布留言，body: `{ "name": "昵称", "content": "内容" }` |
-| `DELETE` | `/api/messages/:id` | 删除指定留言 |
+| `PUT` | `/api/messages/:id` | 修改留言内容（需管理员），body: `{ "content": "..." }` |
+| `DELETE` | `/api/messages/:id` | 删除指定留言（需管理员） |
+| `POST` | `/api/admin/login` | 管理员登录，body: `{ "password": "..." }`，返回 `{ "token": "..." }` |
+| `GET` | `/api/admin/check` | 校验管理员令牌（需 `Authorization: Bearer <token>`） |
+| `POST` | `/api/admin/logout` | 退出登录（需 `Authorization: Bearer <token>`） |
 
 ## 目录结构
 

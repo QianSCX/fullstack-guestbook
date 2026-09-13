@@ -6,6 +6,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { createDatabase } from './db.js';
 
@@ -20,8 +21,43 @@ app.use(express.json());
 const db = await createDatabase();
 const dbKind = process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite';
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const adminTokens = new Set();
+
+function getBearerToken(req) {
+  const header = req.get('authorization') || '';
+  return header.startsWith('Bearer ') ? header.slice(7) : '';
+}
+
+function requireAdmin(req, res, next) {
+  const token = getBearerToken(req);
+  if (!token || !adminTokens.has(token)) {
+    return res.status(401).json({ error: '需要管理员权限' });
+  }
+  next();
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', db: dbKind, time: new Date().toISOString() });
+});
+
+app.post('/api/admin/login', (req, res) => {
+  const password = String(req.body?.password ?? '');
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: '密码错误' });
+  }
+  const token = crypto.randomBytes(24).toString('hex');
+  adminTokens.add(token);
+  res.json({ token });
+});
+
+app.post('/api/admin/logout', requireAdmin, (req, res) => {
+  adminTokens.delete(getBearerToken(req));
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/check', requireAdmin, (_req, res) => {
+  res.json({ ok: true });
 });
 
 app.get('/api/messages', async (_req, res, next) => {
@@ -46,7 +82,7 @@ app.post('/api/messages', async (req, res, next) => {
   }
 });
 
-app.delete('/api/messages/:id', async (req, res, next) => {
+app.delete('/api/messages/:id', requireAdmin, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) {
@@ -57,6 +93,26 @@ app.delete('/api/messages/:id', async (req, res, next) => {
       return res.status(404).json({ error: '留言不存在' });
     }
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.put('/api/messages/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: '无效的 id' });
+    }
+    const content = String(req.body?.content ?? '').trim();
+    if (!content) {
+      return res.status(400).json({ error: 'content 不能为空' });
+    }
+    const updated = await db.updateMessage(id, { content });
+    if (!updated) {
+      return res.status(404).json({ error: '留言不存在' });
+    }
+    res.json(updated);
   } catch (err) {
     next(err);
   }

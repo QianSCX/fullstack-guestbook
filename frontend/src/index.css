@@ -154,3 +154,51 @@ section h2 {
 .delete:hover:not(:disabled) {
   background: #fef2f2;
 }
+
+.admin-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 14px 20px;
+  font-size: 14px;
+}
+
+.admin-login {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.admin-login input {
+  flex: 1;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-self: flex-end;
+}
+
+.edit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-box textarea {
+  width: 100%;
+}
+
+.ghost {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.ghost:hover:not(:disabled) {
+  background: #f0f6ff;
+}

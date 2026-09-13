@@ -61,6 +61,13 @@ class SqliteAdapter {
     return info.changes > 0;
   }
 
+  async updateMessage(id, { content }) {
+    this.db
+      .prepare('UPDATE messages SET content = ? WHERE id = ?')
+      .run(content, id);
+    return this.getMessage(id);
+  }
+
   async close() {
     this.db.close();
   }
@@ -104,6 +111,14 @@ class PostgresAdapter {
       [id]
     );
     return rowCount > 0;
+  }
+
+  async updateMessage(id, { content }) {
+    const { rows } = await this.pool.query(
+      'UPDATE messages SET content = $1 WHERE id = $2 RETURNING id, name, content, created_at',
+      [content, id]
+    );
+    return rows[0];
   }
 
   async close() {
